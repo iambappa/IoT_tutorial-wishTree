@@ -1,0 +1,71 @@
+//--------- for display, omit if no display -------------
+#include <Wire.h>  // I2C library
+#include <SSD1306Wire.h> // legacy include: `#include "SSD1306.h"`
+SSD1306Wire  display(0x3c, 21, 22); //(I2C address, data PIN, clk PIN)- change to (0x3c, 4, 5) for ESP8266
+//--------------------------------------------
+
+#define LEDpin 12         // GPIO-12 attached to LED
+#define INTRPTpin 13      // GPIO-13 attached to interrupt switch
+int bcount = 0;           // blink counter
+int ccount = 0;           // cycle counter- each interrupt increase cycle count
+
+void setup() {
+  
+  Serial.begin(115200);
+  pinMode(LEDpin, OUTPUT);
+  attachInterrupt(digitalPinToInterrupt(INTRPTpin), ADDccount, RISING);    // attaching interrupt- diff syntax for ESP8266
+  // Note that we did not have to use something similar to "pinMode(INTRPTpin, INPUT_PULLUP)"- as we have hardwared PULL-DOWN on GPIO-13
+  // but needed if internal PULLUP is used with a natural interrupt pin- nodeMCU pin D0-D8 has interrupt function
+  // refer to this for another example: https://randomnerdtutorials.com/esp32-pir-motion-sensor-interrupts-timers/
+  
+  //--------- for display, omit if no display -------------
+  display.init(); // Initialising the UI will init the display too
+  display.flipScreenVertically();
+  display.clear();
+  //--------------------------------------------
+}
+
+void loop() {
+
+  digitalWrite(LEDpin, HIGH);   // turn the LED on (HIGH is the voltage level)
+  delay(400);                       
+  digitalWrite(LEDpin, LOW);    // turn the LED off by making the voltage LOW
+  delay(400); 
+  bcount++;             // will work upto limit of "int" data type
+  Serial.print("Blink count:  ");
+  Serial.print(bcount);
+  Serial.print("    Interrupt count:  ");
+  Serial.println(ccount);
+  
+  //--------- for display, omit if no display -------------
+  display.clear();
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_16);
+  display.drawString(6, 16, "Blink");
+  display.setFont(ArialMT_Plain_24);
+  display.drawString(8, 42, String(bcount));
+
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_16);
+  display.drawString(64, 16, "Cycle");
+  display.setFont(ArialMT_Plain_24);
+  display.drawString(74, 42, String(ccount));
+  display.display();
+  //-------------------------------------------------
+  
+  delay(200);
+  
+}
+
+void ADDccount()
+{
+ static unsigned long last_interrupt_time = 0;
+ unsigned long interrupt_time = millis();
+ // If interrupts come faster than 200ms, assume it's a bounce and ignore
+ if (interrupt_time - last_interrupt_time > 200)    // to debouce the Reset switch, as no hardware debounce available
+ {
+   bcount = 0;
+   ccount++;       // will work upto limit of "int" data type (use any debouncing method for better result)
+ }
+ last_interrupt_time = interrupt_time;
+}
