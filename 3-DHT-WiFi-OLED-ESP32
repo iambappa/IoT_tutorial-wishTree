@@ -1,0 +1,175 @@
+
+#include <WiFiClientSecure.h>
+#include <Wire.h>  // Only needed for Arduino 1.6.5 and earlier
+#include <Arduino.h>
+
+#include "DHT.h"
+#define DHTPIN 14     // what pin we're connected to
+#define DHTTYPE DHT22   // DHT 22  (AM2302)
+DHT dht(DHTPIN, DHTTYPE);
+float temp;     // stores temperature value
+int hum;        // stores humidity value
+long randNo1;   // to hold a random number
+unsigned long       Sleeptime = 15e6 ;  // 15 sec. deepsleep
+
+//---------- display -------------
+#include <SSD1306Wire.h> // legacy include: `#include "SSD1306.h"`
+SSD1306Wire  display(0x3c, 21, 22); //(I2C address, data PIN, clk PIN)  pins dffer between ESP8266 n ESP32
+//----------------------------------
+
+#ifndef STASSID
+#define STASSID "xxxxxx";  // ----> change to your mobile phone hotspot SSID to demo anywhere using mobile wifi
+#define STAPSK  "xxxxxx"; //  ----> change to your mobile phone hot-spot password
+#endif
+
+WiFiClientSecure client;
+
+const char* ssid = STASSID;
+const char* password = STAPSK;
+
+const char* host = "api.wisethingz.com";
+const int httpsPort = 443;
+const char* deviceName = "wishTree1";
+
+
+void setup() {
+  Serial.begin(115200);
+
+  //------------ display ----------------
+  display.init(); // Initialising the UI will init the display too
+  display.flipScreenVertically();
+  display.clear();
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_24);
+  display.drawString(0, 14, "Connecting...");
+  display.display();
+  delay(2000);
+  //---------------------------------------
+  
+  Serial.println();
+  Serial.print("connecting to ");
+  Serial.println(ssid);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  // Use WiFiClientSecure class to create TLS connection
+  
+  Serial.print("connecting to ");
+  Serial.println(host);
+
+  //------------- display ------------------
+  display.clear();
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_10);
+  display.drawString(0, 0, ssid);
+  display.setFont(ArialMT_Plain_24);
+  display.drawString(6, 14, deviceName);
+  display.display();
+  delay(2000);
+    
+  if (!client.connect(host, httpsPort)) {
+    Serial.println("connection failed");
+    display.clear();
+    display.setTextAlignment(TEXT_ALIGN_LEFT);
+    display.setFont(ArialMT_Plain_24);
+    display.drawString(6, 14, "Con. Fail");
+    display.display();
+    delay(2000);
+    return;
+  }
+  //-----------------------------------------
+  
+}
+
+void loop() {
+
+  delay(100);
+  temp= (dht.readTemperature())/1.0f;
+  Serial.println(temp);
+  delay(100);
+  hum = dht.readHumidity();
+  Serial.println(hum);
+  randNo1 = random(30);  // generate a random number from 0 to 29
+  Serial.println(randNo1);
+
+  String url = "/Dev/thingsapi?thingname=";
+  url += deviceName;
+  url += "&";
+  url += "Temp";
+  url += "=";
+  url += temp;
+  url += "&";
+  url += "Hum";
+  url += "=";
+  url += hum;
+  url += "&";
+  url += "Rand";
+  url += "=";
+  url += randNo1;
+
+  Serial.print("requesting URL: ");
+  Serial.println(url);
+
+  //------------------- display----------------------
+  display.clear();
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_10);
+  display.drawString(0, 0, "Temp");
+  display.setFont(ArialMT_Plain_24);
+  display.drawString(4, 11, String(temp));
+
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_10);
+  display.drawString(66, 0, "Humidity");
+  display.setFont(ArialMT_Plain_24);
+  display.drawString(74, 11, String(hum)+ "%");
+
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_10);
+  display.drawString(4, 33, "Rand");
+  display.setFont(ArialMT_Plain_24);
+  display.drawString(4, 42, String(randNo1));
+
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_24);
+  display.drawString(38, 38, "\"StayIN\"");
+  
+  display.display();
+  //---------------------------------------------
+
+  client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+               "Host: " + host + "\r\n" +
+               "User-Agent: BuildFailureDetectorESP8266\r\n" +
+               "Connection: close\r\n\r\n");
+
+  Serial.println("request sent");
+  while (client.connected()) {
+    String line = client.readStringUntil('\n');
+    if (line == "\r") {
+      Serial.println("headers received");
+      break;
+    }
+  }
+  String line = client.readStringUntil('\n');
+  if (line.startsWith("{\"state\":\"success\"")) {
+    Serial.println("esp8266/Arduino CI successfull!");
+  } else {
+    Serial.println("esp8266/Arduino CI has failed");
+  }
+  Serial.println("reply was:");
+  Serial.println("==========");
+  Serial.println(line);
+  Serial.println("==========");
+  Serial.println("closing connection");
+  Serial.println("Going to sleep");
+  
+  ESP.deepSleep(Sleeptime);
+}
