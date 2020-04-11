@@ -1,0 +1,106 @@
+/*********
+  Modified from the examples of the Arduino LoRa library
+  More resources: https://randomnerdtutorials.com
+*********/
+
+#include <SPI.h>
+#include <LoRa.h>
+
+//define the pins used by the transceiver module
+#define ss 5
+#define rst 14
+#define dio0 2
+
+#include <Wire.h>  // Only needed for Arduino 1.6.5 and earlier
+#include "SSD1306Wire.h" // legacy include: `#include "SSD1306.h"` // changed from SSD1306.. to accommodate 1.3" OLED //use SH1106Wire.h for 1.3"
+
+SSD1306Wire  display(0x3c, 21, 22);  // (DTA, CLK) changed from SSD1306.. to accommodate 1.3" OLED //use SH1106Wire for 1.3"
+String LoRaData;
+
+void setup() {
+  //initialize Serial Monitor
+  Serial.begin(115200);
+  while (!Serial);
+  Serial.println("LoRa Receiver");
+
+  //setup LoRa transceiver module
+  LoRa.setPins(ss, rst, dio0);
+  
+  //replace the LoRa.begin(---E-) argument with your location's frequency 
+  //433E6 for Asia
+  //866E6 for Europe
+  //915E6 for North America
+  while (!LoRa.begin(866E6)) {
+    Serial.println(".");
+    delay(500);
+  }
+   // Change sync word (0xF3) to match the receiver
+  // The sync word assures you don't get LoRa messages from other LoRa transceivers
+  // ranges from 0-0xFF
+  //LoRa.setSyncWord(0xF3);
+  Serial.println("LoRa Initializing OK!");
+
+  // Initialising the UI will init the display too.
+  display.init();
+
+  display.flipScreenVertically();
+  display.setFont(ArialMT_Plain_10);
+
+ /* display.clear();
+  drawImageDemo();
+  display.display();
+  delay(3000);*/
+
+  display.clear();
+  drawConnectDemo();
+  display.display();
+}
+
+void drawConnectDemo() {
+    // create more fonts at http://oleddisplay.squix.ch/
+    display.setTextAlignment(TEXT_ALIGN_LEFT);
+    display.setFont(ArialMT_Plain_10);
+    display.drawString(0, 0, "Welcome to...");
+    display.setFont(ArialMT_Plain_24);
+    display.drawString(4, 14, "wiseThingz");
+}
+
+/*void drawFontFaceDemo() {
+    // Font Demo1
+    // create more fonts at http://oleddisplay.squix.ch/
+    display.setTextAlignment(TEXT_ALIGN_LEFT);
+    display.setFont(ArialMT_Plain_10);
+    display.drawString(0, 0, "wiseThingz");
+    display.setFont(ArialMT_Plain_24);    // font created in above link. in tool, use version >3, in output change "char" to "uint8_t"
+    display.drawString(6, 14, String(weight)+ " Kg.");
+}*/
+
+void loop() {
+  // try to parse packet
+  int packetSize = LoRa.parsePacket();
+  if (packetSize) {
+    // received a packet
+    Serial.print("Received packet '");
+
+    // read packet
+    while (LoRa.available()) {
+      LoRaData = LoRa.readString();
+      Serial.print(LoRaData); 
+    }
+
+    // print RSSI of packet
+    Serial.print("' with RSSI ");
+    Serial.println(LoRa.packetRssi());
+  }
+
+  display.clear();
+  //drawFontFaceDemo();
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_10);
+  display.drawString(0, 0, "wiseThingz");
+  display.setFont(ArialMT_Plain_24);    // font created in above link. in tool, use version >3, in output change "char" to "uint8_t"
+  display.drawString(6, 14, String(LoRaData));
+  display.setFont(ArialMT_Plain_16);    
+  display.drawString(20, 42, String(LoRa.packetRssi())+ " RSSI");
+  display.display();
+}
