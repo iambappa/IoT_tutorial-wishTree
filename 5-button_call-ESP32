@@ -1,0 +1,66 @@
+//#include <SoftwareSerial.h>
+
+//Create software serial object to communicate with A6
+//SoftwareSerial mySerial(3, 2); //A6 Tx & Rx is connected to Arduino #3 & #2
+
+int callPin = 13;
+char phone_no[]="7506650464";
+HardwareSerial hwSerial(2);
+
+void setup()
+{
+  //Begin serial communication with ESP32 (Serial Monitor)
+  Serial.begin(115200);
+  
+  //Begin serial communication with ESP32 and A6
+  hwSerial.begin(115200);
+  pinMode(callPin, INPUT);
+
+  Serial.println("Initializing...");
+  delay(1000);
+
+  hwSerial.println("AT"); //Once the handshake test is successful, it will back to OK
+  updateSerial();
+  hwSerial.println("AT+CSQ"); //Signal quality test, value range is 0-31 , 31 is the best
+  updateSerial();
+  hwSerial.println("AT+CCID"); //Read SIM information to confirm whether the SIM is plugged
+  updateSerial();
+  hwSerial.println("AT+CREG?"); //Check whether it has registered in the network
+  updateSerial();
+}
+
+void loop()
+{
+  updateSerial();
+  if (digitalRead(callPin) == HIGH) {  //"do we need "__" around "HIGH"?
+    makeCall();
+  }
+}
+
+void updateSerial()
+{
+  delay(500);
+  while (Serial.available()) 
+  {
+    hwSerial.write(Serial.read());//Forward what Serial received to Software Serial Port
+  }
+  while(hwSerial.available()) 
+  {
+    Serial.write(hwSerial.read());//Forward what Software Serial received to Serial Port
+  }
+}
+
+void makeCall()
+{
+  hwSerial.println("AT");
+  updateSerial();
+  delay(500);
+  hwSerial.print("ATD");  //may need a "+" sign after ATD
+  updateSerial();
+  hwSerial.println(phone_no);  //may need "___" around ph. no.
+  updateSerial();
+  //Serial.println(";");
+  delay(10000);
+  hwSerial.println("ATH");
+  updateSerial();
+}
