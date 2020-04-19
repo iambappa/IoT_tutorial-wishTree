@@ -1,0 +1,67 @@
+HardwareSerial hwSerial(2);   // pin 16, 17 -> RX2, TX2
+char phone_no[]="7506650464";  
+
+void setup() {
+Serial.begin(115200);
+hwSerial.begin(115200);
+
+float LAT = random(1900, 2100) / 100.0;
+float LONG = random(7300, 7500) / 100.0;
+String message = "http://maps.google.com/?q=";
+message += LAT;
+message += ",";
+message += LONG;
+
+Serial.println("Initializing...");
+delay(1000);
+
+  // one-time SIM settings only... may repeat no harm
+  hwSerial.println("AT"); //Once the handshake test is successful, it will back to OK
+  updateSerial();
+  hwSerial.println("AT+CSQ"); //Signal quality test, value range is 0-31 , 31 is the best
+  updateSerial();
+  hwSerial.println("AT+CCID"); //Read SIM information to confirm whether the SIM is plugged
+  updateSerial();
+  hwSerial.println("AT+CREG?"); //Check whether it has registered in the network
+  updateSerial();
+
+hwSerial.println("AT+CMGF=1");
+updateSerial();    
+delay(1000);
+hwSerial.print("AT+CMGS=\"");   // the quote mark started here... this answers the quote-close in line-12
+updateSerial();
+hwSerial.print(phone_no);
+updateSerial();
+hwSerial.write(0x22);   // hex equivalent of quotation mark- but why once? where is quote-close?
+updateSerial();
+hwSerial.write(0x0D);  // hex equivalent of Carraige return 
+updateSerial();   
+hwSerial.write(0x0A);  // hex equivalent of newline
+updateSerial();
+delay(1000);
+hwSerial.print(message);    //("GSM A6 test message!");
+updateSerial();
+delay(500);
+hwSerial.println (char(26));//the ASCII code of the ctrl+z is 26
+updateSerial();
+
+//ESP.deepsleep(30e6);
+}
+
+void loop()
+{
+
+}
+
+void updateSerial()
+{
+  delay(500);
+  while (Serial.available()) 
+  {
+    hwSerial.write(Serial.read());//Forward what Serial received to Software Serial Port
+  }
+  while(hwSerial.available()) 
+  {
+    Serial.write(hwSerial.read());//Forward what Software Serial received to Serial Port
+  }
+}
