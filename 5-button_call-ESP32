@@ -4,7 +4,7 @@
 //SoftwareSerial mySerial(3, 2); //A6 Tx & Rx is connected to Arduino #3 & #2
 
 int callPin = 13;
-char phone_no[]="7506650464";
+char phone_no[]="xxxxxxxxxx";
 HardwareSerial hwSerial(2);
 
 void setup()
