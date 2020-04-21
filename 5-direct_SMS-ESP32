@@ -1,5 +1,5 @@
 HardwareSerial hwSerial(2);   // pin 16, 17 -> RX2, TX2
-char phone_no[]="7506650464";  
+char phone_no[]="xxxxxxxxxx";  
 
 void setup() {
 Serial.begin(115200);
