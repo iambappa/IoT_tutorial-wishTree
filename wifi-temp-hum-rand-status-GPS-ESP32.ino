@@ -1,3 +1,5 @@
+/* Code for ESP32, by Bappaditya"*/
+
 #include "header.h"
 
 const unsigned long AnalogIn  = 34; //34 for wishTree-ESP32;   // A0 for ESP8266, works in nodeMCU directly, Arduino needs voltage divider
@@ -10,8 +12,8 @@ float LONG;
 
 unsigned long       Sleeptime = 15e6 ;  // 15 sec. deepsleep
 
-const char* id = "xxxxxxx";   // use you WiFi router SSID; removed "const" specifier- otherwise not compiling -> then added "const" in .h and .cpp -> then worked
-const char* pw = "xxxxxxx";   // use your router password
+const char* id = "TP-LINK";   // use you WiFi router SSID; removed "const" specifier- otherwise not compiling -> then added "const" in .h and .cpp -> then worked
+const char* pw = "bappaditya";   // use your router password
 
 const char* deviceName = "demoDevice";
 
@@ -22,23 +24,28 @@ void setup() {
 }
 
 void loop() {
+  Serial.println("-------------------------------------------------");
+  Serial.print("Device name: ");
+  Serial.println(deviceName);
 
   readingIn = analogRead(AnalogIn);
-  Serial.println(readingIn);
+  Serial.println("Battery reading: " + String(readingIn));
   delay(200);
   randFloat = random(100)/1.0f;  // generate a random number from 0 to 199
-  Serial.println(randFloat);
+  Serial.println("Random: " + String(randFloat));
   Run = random(2);
   if (Run%2 == 0){
   Status = "Closed";}
   else
   {Status = "Open";}
-  Serial.println(Status);
+  Serial.println("Door Status: " + Status);
   LAT = random(1900, 2100) / 100.00f;
   LONG = random(7300, 7500) / 100.00f;
+  Serial.print("LAT n LONG: ");
   Serial.print(LAT);
-  Serial.print("/t");
+  Serial.print(" / ");
   Serial.println(LONG);
+  Serial.println("----------------------------------------------------");
 
   String Url = "/Dev/thingsapi?thingname=";  Url += deviceName;
   Url += "&";
