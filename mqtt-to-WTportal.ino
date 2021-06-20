@@ -108,7 +108,7 @@ void loop() {
   if (now - lastMsg > 15000) {
     lastMsg = now;
     value = random(100);   //++value;
-    snprintf (msg, 50, "{\"thingname\":\"mqttthing\", \"a\": \"%d\"}", value);    //(msg, 50, "hello world #%ld", value);
+    snprintf (msg, 50, "{\"thingname\":\"xxxxxxxx\", \"a\": \"%d\"}", value);    // get a device unique device tag from us
     //sprintf(G_dht_string, ",\"temperature\":%s,\"humidity\":%s", temp, hum) ;   // -> sample from other code
     //msg = "{\"thingname\":\"firstthing\", \"a\": \"36\"}"
     Serial.print("Publish message: ");
