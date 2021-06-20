@@ -15,7 +15,7 @@ unsigned long       Sleeptime = 15e6 ;  // 15 sec. deepsleep
 const char* id = "TP-LINK";   // use you WiFi router SSID; removed "const" specifier- otherwise not compiling -> then added "const" in .h and .cpp -> then worked
 const char* pw = "bappaditya";   // use your router password
 
-const char* deviceName = "demoDevice";
+const char* deviceName = "xxxxxx";    // get a valid device tag from us
 
 void setup() {
   Serial.begin(115200);
